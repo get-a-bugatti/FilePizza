@@ -1,3 +1,6 @@
+import { PROJECT_ROOT, maxFileCount, maxFileMb } from './constants.js';
+
+
 const crypto = require('crypto')
 
 const storage = multer.diskStorage({
@@ -12,9 +15,16 @@ const storage = multer.diskStorage({
   }
 })
 
+const UPLOADS_DIR = process.env.UPLOADS_DIR ?? path.join(PROJECT_ROOT, "uploads");
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  console.error("Upload directory does not exist yet.", UPLOADS_DIR);
+}
+
+
 const limits = {
-  fileSize: 1 * 1024 * 1024 * 1024,
-  files: 5
+  fileSize: maxFileMb * 1024 * 1024,
+  files: maxFileCount
 }
 
 export const upload = multer({ storage: storage, limits: limits })
