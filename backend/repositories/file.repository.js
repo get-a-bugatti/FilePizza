@@ -26,27 +26,22 @@
         };
 */
 
-// Map keyed by file id -> record object. (A Map is used over a plain object
-// because it's ordered by insertion and has fast, safe key lookups.)
+
 const records = new Map();
 
-/** Save a record and return it. */
 export function save(record) {
   records.set(record.id, record);
   return record;
 }
 
-/** Look up one record by id. Returns null when the id is unknown. */
 export function findById(id) {
   return records.get(id) ?? null;
 }
 
-/** Return all records as a plain array. */
 export function findAll() {
   return [...records.values()];
 }
 
-/** Delete a record. Returns true if something was deleted. */
 export function remove(id) {
   return records.delete(id);
 }
