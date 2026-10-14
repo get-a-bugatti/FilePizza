@@ -33,6 +33,7 @@ const gracefulShutdown = async () => {
     // Close Http server
     httpServer.close(() => {
       console.log("✅ HTTP Server closed.");
+      process.exit(1);
     });
 
     
@@ -47,10 +48,14 @@ process.on("SIGTERM", gracefulShutdown);
 
 process.on("uncaughtException", (error) => {
     console.error(`Caught exception: ${error}\n` + `Exception origin: ${error.stack}`);
+
+    gracefulShutdown();
 })
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
+
+  gracefulShutdown();
 });
 
 startServer();
