@@ -6,3 +6,4 @@ test/.tmp-uploads/
 *.log
 .DS_Store
 test/fixture.bin
+*.zip
