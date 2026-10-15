@@ -1,5 +1,5 @@
 import express from 'express';
-import { intFromEnv } from './config/env';
+import { intFromEnv } from './config/env.js';
 import{ router as filesRouter} from './routes/file.routes.js';
 
 
@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json({limit: "16kb"}));
 
 
-app.use("/api/files", filesRouter);
+app.use("/api/v1/files", filesRouter);
 
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
@@ -23,7 +23,10 @@ app.use((err, req, res, next) => {
    });
 });
 
-const PORT = Number(process.env.PORT) || 3000;
-app.listen(intFromEnv(PORT, 3000), () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+// No app.listen here: index.js is the entrypoint (package.json start/dev) and
+// creates the server itself — listening in both places opened a second server on
+// port 3000 (also `intFromEnv(PORT, 3000)` passed a number instead of "PORT", so
+// it always fell back to 3000 regardless of .env).
+
+
+export {app};

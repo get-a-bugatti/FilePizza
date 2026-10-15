@@ -1,11 +1,22 @@
-import { PROJECT_ROOT, maxFileCount, maxFileMb } from './constants.js';
+import { UPLOADS_DIR, maxFileCount, maxFileMb } from '../constants.js';
+import multer from "multer";
+import path from "path";
+import crypto from "crypto";
+import fs from "fs";
 
+// Staging area: multer writes each raw multipart part here while the request is
+// still streaming in. The controller later zips those parts into UPLOADS_DIR
+// (the final location) and deletes them. Keep the two separate — pointing
+// `destination` straight at the final folder is what caused the duplicate files.
+const STAGING_DIR = path.join(UPLOADS_DIR, "tmp");
 
-const crypto = require('crypto')
+// diskStorage does NOT create the destination folder for you (only the legacy
+// `dest:` option does), so make sure it exists before the first upload.
+fs.mkdirSync(STAGING_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, `/uploads/${req.headers[x-filename]}`)  // Change filename later.
+    cb(null, STAGING_DIR)
   },
   filename: function (req, file, cb) {
     crypto.randomBytes(16, function (err, raw) {
@@ -15,11 +26,6 @@ const storage = multer.diskStorage({
   }
 })
 
-const UPLOADS_DIR = process.env.UPLOADS_DIR ?? path.join(PROJECT_ROOT, "uploads");
-
-if (!fs.existsSync(UPLOADS_DIR)) {
-  console.error("Upload directory does not exist yet.", UPLOADS_DIR);
-}
 
 
 const limits = {

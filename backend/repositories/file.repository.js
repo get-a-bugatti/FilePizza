@@ -27,21 +27,26 @@
 */
 
 
-const records = new Map();
+class RecordStore {
+  #records = new Map();
 
-export function save(record) {
-  records.set(record.id, record);
-  return record;
+  save(record) {
+    this.#records.set(record.id, record);
+    return record;
+  }
+
+  findById(id) {
+    return this.#records.get(id) ?? null;
+  }
+
+  findAll() {
+    return [...this.#records.values()];
+  }
+
+  remove(id) {
+    return this.#records.delete(id);
+  }
 }
 
-export function findById(id) {
-  return records.get(id) ?? null;
-}
-
-export function findAll() {
-  return [...records.values()];
-}
-
-export function remove(id) {
-  return records.delete(id);
-}
+// Export a single shared instance — controller/service call save()/findById() on it.
+export default new RecordStore();   
