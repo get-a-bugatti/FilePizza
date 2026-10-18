@@ -1,4 +1,6 @@
-import repository from "../repositories/file.repository.js";
+// import repository from "../repositories/file.repository.js";
+import repository from "../repositories/redis.repository.js";
+
 import { NotFoundError } from "../utils/errorHandlers.js";
 import { UPLOADS_DIR } from "../constants.js";
 import path from "path";
@@ -6,17 +8,16 @@ import fs from "fs";
 
 class FileService {
 
-    getFileStream(id) {
-        const fileRecord = repository.findById(id);
-        if (!fileRecord) throw new NotFoundError('File not found');
+    async getFileStream(id) { // generate fileStream from FileRepository.
+        const filename = await repository.findFilenameById(id);
+        if (!filename) throw new NotFoundError('File not found');
 
         
-        const filepath = path.join(UPLOADS_DIR, fileRecord.filename);
+        const filepath = path.join(UPLOADS_DIR, filename);
 
-        // caller is responsible for checking existence / stat
         return {
             stream: fs.createReadStream(filepath),
-            filename: fileRecord.filename,
+            filename: filename,
             // size, mimeType, etc. — whatever the controller needs for headers
         };
     }
