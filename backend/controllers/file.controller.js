@@ -4,7 +4,11 @@ import fs from "fs";
 import { join } from "path";
 import { UPLOADS_DIR } from "../constants.js";
 import { ZipArchive } from "archiver";
-import repository from "../repositories/file.repository.js";
+
+
+// import repository from "../repositories/file.repository.js";
+import repository from "../repositories/redis.repository.js";
+
 import { AppError, BadRequestError, NotFoundError } from "../utils/errorHandlers.js";
 
 class FileController {
@@ -63,7 +67,7 @@ class FileController {
       createdAt: new Date().toISOString(),
     };
 
-    repository.save(record);
+    await repository.save(record);
 
     for (const f of req.files) fs.unlink(f.path, () => {});
 
@@ -84,11 +88,13 @@ class FileController {
 
     let file;
     try {
-      file = fileService.getFileStream(id);
+      file = await fileService.getFileStream(id);
     } catch (err) {
       if (err instanceof NotFoundError) {
         return res.status(404).json({ success: false, error: err.message });
       }
+
+      console.error(err);
       return res.status(500).json({ success: false, error: "Internal error." });
     }
 

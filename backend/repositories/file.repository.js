@@ -27,7 +27,7 @@
 */
 
 
-class RecordStore {
+export class RecordStore {
   #records = new Map();
 
   save(record) {
