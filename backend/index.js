@@ -1,31 +1,31 @@
 import "./config/env.js";
 import { app } from "./app.js";
 import http from "http";
-
+import {connectRedis} from "./config/redis.js";
 
 let httpServer = null;
 
 const startServer = () => {
-  
-  try {
+
+      try {
+        
+        httpServer = http.createServer(app);
+        const port = process.env.PORT || 8080;
     
-    httpServer = http.createServer(app);
-    const port = process.env.PORT || 8080;
+        httpServer.listen(port, () => {
+          console.log("✅ Server started on port", port);
+        });
+    
+        httpServer.on("error", (err) => {
+          console.error(`❌ Server error: ${err}`);
+    
+          process.exit(1);
+        })
+      } catch (startupError) {
+        console.error("Startup Error: ", startupError);
+      }
+  };
 
-    httpServer.listen(port, () => {
-      console.log("✅ Server started on port", port);
-    });
-
-    httpServer.on("error", (err) => {
-      console.error(`❌ Server error: ${err}`);
-
-      process.exit(1);
-    })
-  } catch (startupError) {
-    console.error("Startup Error: ", startupError);
-  }
-
-};
 
 const gracefulShutdown = async () => {
   try {
@@ -58,4 +58,12 @@ process.on('unhandledRejection', (reason, p) => {
   gracefulShutdown();
 });
 
-startServer();
+
+connectRedis()
+  .then(() => {
+
+    startServer();
+  })
+  .catch(redisError => {
+    console.error("Redis Connection Error :", redisError);
+  })
