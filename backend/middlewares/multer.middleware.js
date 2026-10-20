@@ -1,8 +1,8 @@
 import { UPLOADS_DIR, maxFileCount, maxFileMb } from '../constants.js';
 import multer from "multer";
-import path from "path";
-import crypto from "crypto";
-import fs from "fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import fs from "node:fs";
 
 // Staging area: multer writes each raw multipart part here while the request is
 // still streaming in. The controller later zips those parts into UPLOADS_DIR
