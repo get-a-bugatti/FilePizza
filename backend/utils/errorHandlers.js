@@ -1,12 +1,13 @@
 class AppError extends Error {
     // second arg is optional: `new AppError('msg')` must not throw on destructure
-    constructor(message, {statusCode=500, code='INTERNAL_ERROR', stack, details=''} = {}) {
+    constructor(message, {statusCode=500, code='INTERNAL_ERROR', stack, details='', errors = ''} = {}) {
         super(message);
         this.success = false;
         this.name = this.constructor.name;
         this.statusCode = statusCode;
         this.code = code;
         this.details = details;
+        this.errors = errors;
         if (stack) {
             this.stack = stack;
         } else {
