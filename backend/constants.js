@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 import { intFromEnv } from "./config/env.js";
 
 export const PROJECT_ROOT = path.resolve(import.meta.dirname, "..", "..");
@@ -9,6 +9,8 @@ export const UPLOADS_DIR = process.env.UPLOADS_DIR ?? path.join(BACKEND_ROOT, "u
 
 export const maxFileMb = intFromEnv("MAX_FILE_MB", 1024);
 export const maxFileCount = intFromEnv("MAX_FILES", 3);
+
+export const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
 
 
