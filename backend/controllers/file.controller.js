@@ -1,75 +1,15 @@
 import { fileService } from "../services/file.service.js";
-import { randomUUID } from "crypto";
-import fs from "fs";
 import { join } from "path";
 import { UPLOADS_DIR } from "../constants.js";
-import { ZipArchive } from "archiver";
-
-
-// import repository from "../repositories/file.repository.js";
-import repository from "../repositories/redis.repository.js";
-
-import { AppError, BadRequestError, NotFoundError } from "../utils/errorHandlers.js";
-
+import { AppError, BadRequestError } from "../utils/errorHandlers.js";
 class FileController {
   async upload(req, res, next) {
 
-    console.log("Req.files :", req.files);
     if (!req.files || req.files.length === 0) {
       throw new BadRequestError("No files uploaded.");
     }
 
-    const fileId = randomUUID();
-    const fileAlias = `upload-${fileId}.zip`;
-    const destination = join(UPLOADS_DIR, fileAlias); // final location; multer's raw parts land in uploads/tmp first
-
-    const archive = new ZipArchive({ zlib: { level: 6 } }); // archiver@8: ctor takes only options; the format is fixed by the class
-    const writeStream = fs.createWriteStream(destination);
-
-    archive.pipe(writeStream);
-
-    for (const f of req.files) {
-        archive.append(fs.createReadStream(f.path), {
-            name: f.originalname // multer's field is `originalname` (lowercase n)
-        })
-    }
-
-    archive.finalize();
-
-    // Todo: Cleanup code for errors (writeStream errors, archive errors)
-    await new Promise((resolve, reject) => {
-        writeStream.on('close', resolve);
-        writeStream.on('error', reject);
-        archive.on('error', reject);
-    })
-    .catch(error => {
-
-        for (const f of req.files){
-            fs.unlink(f.path,  () => {});
-        }
-
-        fs.unlink(destination, () => {});
-
-        if (!res.headersSent) {
-            throw new AppError("Upload failed.")
-        }
-
-        return res.destroy(error);
-    })
-
-    const stats = await fs.promises.stat(destination); // was missing `await` → size was undefined
-
-    const record = {
-      id: fileId,
-      filename: fileAlias,
-      size: stats.size,
-      mimetype: "application/zip",
-      createdAt: new Date().toISOString(),
-    };
-
-    await repository.save(record);
-
-    for (const f of req.files) fs.unlink(f.path, () => {});
+    const fileId = await fileService.processAndArchiveFiles(req.files);
 
     res.status(200).json({
         success: true,
@@ -83,32 +23,29 @@ class FileController {
     const { id } = req.params;
 
     if (!id || typeof id !== "string") {
-      return res.status(400).json({ success: false, error: "Invalid id." });
+      throw new BadRequestError("Invalid Id.");
     }
 
     let file;
     try {
-      file = await fileService.getFileStream(id);
+      file = await fileService.getFileStream(id); // file : {stream, filename}
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        return res.status(404).json({ success: false, error: err.message });
-      }
 
-      console.error(err);
-      return res.status(500).json({ success: false, error: "Internal error." });
+      console.error("[FileController::error]", err);
+      throw err;
     }
 
     const filepath = join(UPLOADS_DIR, file.filename);
 
     let stats;
     try {
-      stats = await fs.promises.stat(filepath);
-    } catch {
+      stats = await fileService.getFileStats(filepath);
+    } catch (error) {
+
       file.stream.destroy();
-      return res
-        .status(404)
-        .json({ success: false, error: "File not found on disk." });
+      throw error;
     }
+
 
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader(
@@ -120,7 +57,7 @@ class FileController {
     file.stream.on("error", (err) => {
       console.error(`[download] ${id}: ${err.message}`);
       if (!res.headersSent) {
-        res.status(500).json({ success: false, error: "Failed to read file." });
+        throw new AppError("Failed to read file.")
       } else {
         res.destroy(err);
       }
