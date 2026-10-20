@@ -7,3 +7,7 @@ test/.tmp-uploads/
 .DS_Store
 test/fixture.bin
 *.zip
+.freebuff/
+NOTES.md 
+TODO.md
+
