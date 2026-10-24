@@ -9,7 +9,9 @@ class FileController {
       throw new BadRequestError("No files uploaded.");
     }
 
-    const fileId = await fileService.processAndArchiveFiles(req.files);
+
+    // TODO: Make it work with backgorund jobs.
+    // const fileId = await fileService.processAndArchiveFilesBackground(req.files);
 
     res.status(200).json({
         success: true,
@@ -19,55 +21,52 @@ class FileController {
    
   }
 
-  async download(req, res) {
+  async download(req, res, next) {
     const { id } = req.params;
 
-    if (!id || typeof id !== "string") {
-      throw new BadRequestError("Invalid Id.");
-    }
-
-    let file;
+    let fileData;
     try {
-      file = await fileService.getFileStream(id); // file : {stream, filename}
+      fileData = await fileService.prepareFileDownload(id); // file : {stream, filename}
     } catch (err) {
 
-      console.error("[FileController::error]", err);
-      throw err;
+      console.error("[FileController::download error]", err);
+      return next(err);
     }
 
-    const filepath = join(UPLOADS_DIR, file.filename);
-
-    let stats;
-    try {
-      stats = await fileService.getFileStats(filepath);
-    } catch (error) {
-
-      file.stream.destroy();
-      throw error;
-    }
+    const {stream, filename, size} = fileData;
 
 
-    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Type", "application/zip");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${file.filename}"`,
+      `attachment; filename="${filename}"`,
     );
-    res.setHeader("Content-Length", stats.size);
+    res.setHeader("Content-Length", size);
 
-    file.stream.on("error", (err) => {
+
+    stream.on("error", async (err) => {
       console.error(`[download] ${id}: ${err.message}`);
+      await fileService.handleStreamError(id);
+
       if (!res.headersSent) {
-        throw new AppError("Failed to read file.")
+        next(err);
       } else {
         res.destroy(err);
       }
     });
 
-    res.once("close", () => {
-      if (!res.writableEnded) file.stream.destroy();
+    stream.on('end', async () => {
+      await fileService.handleStreamEnd(id);
+    })
+
+    res.once("close", async () => {
+      if (!res.writableEnded) {
+        stream.destroy();
+        await fileService.handleStreamError(id);
+      }
     });
 
-    file.stream.pipe(res);
+    stream.pipe(res);
   }
 }
 
