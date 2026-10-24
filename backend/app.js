@@ -1,5 +1,4 @@
 import express from 'express';
-import { intFromEnv } from './config/env.js';
 import{ router as filesRouter} from './routes/file.routes.js';
 
 
@@ -7,6 +6,7 @@ import{ router as filesRouter} from './routes/file.routes.js';
 const app = express();
 
 app.use(express.json({limit: "16kb"}));
+app.use(express.urlencoded({limit: "16kb"}));
 
 
 app.use("/api/v1/files", filesRouter);
