@@ -10,7 +10,7 @@ export const validate = (schema) => {
         if (req.files && Array.isArray(req.files)) {
 
             for(const file of req.files) {
-                const detectedType = await fileTypeFromFile(file);
+                const detectedType = await fileTypeFromFile(file.path);
 
                 if (!detectedType || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
                     cleanupTempFiles(req.files);
@@ -32,12 +32,12 @@ export const validate = (schema) => {
 
             cleanupTempFiles(req.files);
 
-            const formattedErrors = result.error.errors.map((err) => ({
+            const formattedErrors = result.error.issues.map((err) => ({
                 field: err.path.join("."),
                 message: err.message,
             }));
 
-            throw new AppError('Validation Failed.', {statusCode:400, code:"BAD_REQUEST", errors: formattedErrors})
+            throw new AppError(formattedErrors[0].message || 'Validation Failed.', {statusCode:400, code:"BAD_REQUEST", errors: formattedErrors})
         }
 
         
