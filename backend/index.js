@@ -11,6 +11,9 @@ const startServer = () => {
         
         httpServer = http.createServer(app);
         const port = process.env.PORT || 8080;
+
+        httpServer.timeout = 5 * 60 * 1000; // Http Request timeout (no hanging requests.)
+        httpServer.keepAliveTimeout = 65000; // TCP Connection timeout
     
         httpServer.listen(port, () => {
           console.log("✅ Server started on port", port);
