@@ -43,6 +43,14 @@ class RedisStore extends RecordStore {
     } while (cursor !== '0');
     return keys;
   }
+
+  async incrementActiveDownloads(id) {
+    await redis.hincrby(`file:${id}`, 'downloads', 1);
+  }
+
+  async decrementActiveDownloads(id) {
+    await redis.hincrby(`file:${id}`, 'downloads', -1);
+  }
 }   
 
 export default new RedisStore();
